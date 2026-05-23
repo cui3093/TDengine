@@ -10,9 +10,9 @@ if(TD_ENTERPRISE)
 endif()
 
 IF(TD_ENTERPRISE)
-  IF(${BUILD_WITH_S3})
+  IF(BUILD_WITH_S3)
     add_definitions(-DUSE_S3)
-  ELSEIF(${BUILD_WITH_COS})
+  ELSEIF(BUILD_WITH_COS)
     add_definitions(-DUSE_COS)
   ENDIF()
 ENDIF()
@@ -30,6 +30,6 @@ if(TD_ENTERPRISE)
   # Include taosk headers for encryption key management
   target_include_directories(
     dnode
-    PRIVATE "${TD_ENTERPRISE_DIR}/src/plugins/taosk/inc"
+    PRIVATE "${TD_ENTERPRISE_DIR}/source/plugins/taosk/inc"
   )
 endif()

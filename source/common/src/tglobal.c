@@ -435,10 +435,10 @@ bool     tsIfAdtFse = false;                    // ADT-FSE algorithom or origina
 char     tsCompressor[32] = "ZSTD_COMPRESSOR";  // ZSTD_COMPRESSOR or GZIP_COMPRESSOR
 
 // udf
-#if defined(WINDOWS) || !defined(USE_UDF)
-bool tsStartUdfd = false;
-#else
+#ifdef USE_UDF
 bool    tsStartUdfd = true;
+#else
+bool    tsStartUdfd = false;
 #endif
 
 // wal
@@ -2686,7 +2686,7 @@ int32_t readCfgFile(const char *path, bool isGlobal) {
     array = taosGetLocalCfg(tsCfg);
     snprintf(filename, sizeof(filename), "%s%sdnode%sconfig%slocal.json", path, TD_DIRSEP, TD_DIRSEP, TD_DIRSEP);
   }
-  uInfo("start to read config file:%s", filename);
+  uInfo("load config file:%s", filename);
 
   if (!taosCheckExistFile(filename)) {
     uInfo("config file:%s does not exist", filename);
@@ -3606,6 +3606,7 @@ int32_t taosGranted(int8_t type) {
 
 int32_t globalConfigSerialize(int32_t version, SArray *array, char **serialized) {
   char   buf[30];
+  char  *pSerialized = NULL;
   cJSON *json = cJSON_CreateObject();
   if (json == NULL) goto _exit;
   if (cJSON_AddNumberToObject(json, "file_version", GLOBAL_CONFIG_FILE_VERSION) == NULL) goto _exit;
@@ -3650,7 +3651,7 @@ int32_t globalConfigSerialize(int32_t version, SArray *array, char **serialized)
       }
     }
   }
-  char *pSerialized = tjsonToString(json);
+  pSerialized = tjsonToString(json);
 _exit:
   if (terrno != TSDB_CODE_SUCCESS) {
     uError("failed to serialize global config since %s", tstrerror(terrno));
@@ -3662,6 +3663,7 @@ _exit:
 
 int32_t localConfigSerialize(SArray *array, char **serialized) {
   char   buf[30];
+  char  *pSerialized = NULL;
   cJSON *json = cJSON_CreateObject();
   if (json == NULL) goto _exit;
 
@@ -3735,7 +3737,7 @@ int32_t localConfigSerialize(SArray *array, char **serialized) {
       }
     }
   }
-  char *pSerialized = tjsonToString(json);
+  pSerialized = tjsonToString(json);
 _exit:
   if (terrno != TSDB_CODE_SUCCESS) {
     uError("failed to serialize local config since %s", tstrerror(terrno));
@@ -3747,6 +3749,7 @@ _exit:
 
 int32_t stypeConfigSerialize(SArray *array, char **serialized) {
   char   buf[30];
+  char  *pSerialized = NULL;
   cJSON *json = cJSON_CreateObject();
   if (json == NULL) goto _exit;
 
@@ -3763,7 +3766,7 @@ int32_t stypeConfigSerialize(SArray *array, char **serialized) {
     SConfigItem *item = (SConfigItem *)taosArrayGet(array, i);
     if (cJSON_AddNumberToObject(cField, item->name, item->stype) == NULL) goto _exit;
   }
-  char *pSerialized = tjsonToString(json);
+  pSerialized = tjsonToString(json);
 _exit:
   if (terrno != TSDB_CODE_SUCCESS) {
     uError("failed to serialize local config since %s", tstrerror(terrno));

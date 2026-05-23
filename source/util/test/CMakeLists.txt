@@ -162,7 +162,7 @@ add_test(
     COMMAND timerTest
 )
 
-if(${TD_LINUX})
+if(TD_LINUX)
     add_executable(utilTests utilTests.cpp stringTest.cpp)
     DEP_ext_gtest(utilTests)
     target_link_libraries(utilTests PRIVATE os util common)
@@ -194,5 +194,14 @@ if(${TD_LINUX})
     add_test(
         NAME memPoolTest
         COMMAND memPoolTest
+    )
+
+    # queryAutoQWorkerTest
+    add_executable(queryAutoQWorkerTest "queryAutoQWorkerTest.cpp")
+    DEP_ext_gtest(queryAutoQWorkerTest)
+    target_link_libraries(queryAutoQWorkerTest PRIVATE os util common)
+    add_test(
+        NAME queryAutoQWorkerTest
+        COMMAND queryAutoQWorkerTest
     )
 endif()

@@ -710,7 +710,10 @@ class TDCom:
     def getBuildPath(self):
         selfPath = os.path.dirname(os.path.realpath(__file__))
 
-        if "community" in selfPath:
+        if "taos-community" in selfPath:
+            # tsdb repo layout: /mnt/tsdb/source/taos-community/test/...
+            projPath = selfPath[: selfPath.find("source/taos-community")]
+        elif "community" in selfPath:
             projPath = selfPath[: selfPath.find("community")]
         elif "TDengine" in selfPath:
             projPath = selfPath[: selfPath.find("TDengine") + len("TDengine")]
@@ -2987,7 +2990,8 @@ class TDCom:
         ignore_patterns = [
             "Query OK",
             "Copyright",
-            "Welcome to the TDengine TSDB Command"
+            "Welcome to the TDengine TSDB Command",
+            "Welcome to the TDengine Command Line Interface"
         ]
         filtered = [line for line in output if not any(pat in line for pat in ignore_patterns)]
 
@@ -3053,7 +3057,7 @@ class TDCom:
                 # Filter taos> lines
                 os.system(
                     f"taos -c {cfgPath} -f {inputfile} "
-                    "| grep -v 'Query OK'|grep -v 'Copyright'| grep -v 'Welcome to the TDengine TSDB Command' "
+                    "| grep -v 'Query OK'|grep -v 'Copyright'| grep -Ev 'Welcome to the TDengine (TSDB )?Command' "
                     "| grep -v 'Exec cost:' "
                     "| sed -E 's/[[:space:]]*\\([0-9]+\\.[0-9]+s\\)/ /g' "
                     "| sed -E 's/cost=[0-9]+\\.[0-9]+\\.\\.[0-9]+\\.[0-9]+//g' "
@@ -3100,8 +3104,8 @@ class TDCom:
             else:
                 os.system(
                     f"taos -c {cfgPath} -f {inputfile} "
-                    "| grep -v 'Query OK'|grep -v 'Copyright'| grep -v 'Welcome to the TDengine TSDB Command' "
-                    "| grep -v 'Exec cost:' " 
+                    "| grep -v 'Query OK'|grep -v 'Copyright'| grep -Ev 'Welcome to the TDengine (TSDB )?Command' "
+                    "| grep -v 'Exec cost:' "
                     "| sed -E 's/[[:space:]]*\\([0-9]+\\.[0-9]+s\\)/ /g' "
                     # cost=0.000..1.111
                     "| sed -E 's/cost=[0-9]+\\.[0-9]+\\.\\.[0-9]+\\.[0-9]+//g' "

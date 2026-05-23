@@ -36,10 +36,10 @@ target_link_libraries(
 
 # SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
 
-if(${BUILD_WITH_UDF})
+if(BUILD_WITH_UDF)
 add_executable(taosudf src/udfd.c)
 
-if(${TD_DARWIN})
+if(TD_DARWIN)
     target_compile_options(taosudf PRIVATE -Wno-error=deprecated-non-prototype)
 endif()
 
@@ -61,6 +61,14 @@ target_link_libraries(
     PRIVATE os util common nodes function dnode
 )
 
+if(NOT TD_WINDOWS)
+    set_target_properties(taosudf PROPERTIES
+        INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib:$ORIGIN/../driver"
+        BUILD_WITH_INSTALL_RPATH TRUE
+        SKIP_BUILD_RPATH FALSE
+    )
+endif()
+
 if(UNIX AND NOT APPLE)
     # ref: https://cmake.org/cmake/help/latest/release/3.4.html#deprecated-and-removed-features
     set_target_properties(taosudf PROPERTIES
@@ -68,6 +76,8 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 
-add_subdirectory(test)
+if(BUILD_TEST)
+    add_subdirectory(test)
+endif()
 
-endif(${BUILD_WITH_UDF})
+endif()

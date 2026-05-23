@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set +e
-#set -x
+# set -x
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   TD_OS="Darwin"
@@ -22,11 +22,14 @@ cd "$SCRIPT_DIR"/../ || exit 1
 SCRIPT_DIR=$(pwd)
 
 IN_TDINTERNAL="community"
-if [[ "$SCRIPT_DIR" == *"$IN_TDINTERNAL"* ]]; then
-  cd ../../
+if [[ "${SCRIPT_DIR}" == *"taos-community"* ]]; then
+  TOP_DIR="${TEST_CODE_DIR}/../../../"
+elif [[ "${SCRIPT_DIR}" == *"${IN_TDINTERNAL}"* ]]; then
+  TOP_DIR="${TEST_CODE_DIR}/../../"
 else
-  cd ../
+  TOP_DIR="${TEST_CODE_DIR}/../"
 fi
+
 if [[ -n "$WORK_DIR" ]]; then
   echo "WORK_DIR: $WORK_DIR"
   TAOS_DIR=$WORK_DIR  
@@ -83,10 +86,13 @@ python_error=$(cat "${LOG_DIR}"/*.info | grep -w "stack" | wc -l)
 #/home/TDengine/source/common/src/tdataformat.c
 #/root/chr/test_taosd/lib/python3.12/site-packages/taosws/taosws.abi3.so+0x1b2fe4
 # shellcheck disable=SC2126
+# ignore gcov-instrumented noasan test binaries (sml_test/tmq_get_meta_json/replay_test etc.) running under ASAN:
+# when these noasan binaries exit, __gcov_open/__gcov_exit tries to write coverage data and SEGVs.
+# this is NOT a product bug — it's an artifact of running gcov-compiled binaries via LD_PRELOAD ASAN.
 python_taos_error=$(
   cat "${LOG_DIR}"/*.info |
-  grep -E  "#[0-9]+ 0x[0-9a-f]+ .*(TDinternal|TDengine|/taosws/)" |
-  grep -E -v "venv|taosws.abi3.so" |
+  grep -E  "#[0-9]+ 0x[0-9a-f]+ .*(TDinternal|TDengine|/taosws/|/mnt/tsdb/source/taos-community/)" |
+  grep -E -v "venv|taosws.abi3.so|__gcov|gcov_do_dump|_GLOBAL__sub_D|sml_test|tmq_get_meta_json|replay_test|tmq_sim|tmq_taosx_ci" |
   wc -l
 )
 
@@ -140,8 +146,8 @@ if [ $errors -eq 0 ]; then
 else
   echo -e "\033[44;31;1m"asan total errors: $errors"\033[0m"
   if [ "$python_error" -ne 0 ] || [ "$python_taos_error" -ne 0 ] ; then
-    cat "${LOG_DIR}"/*.info |grep "#" | grep -w "TDinternal"
+    cat "${LOG_DIR}"/*.info |grep "#" | grep -wE "TDinternal|taos-community"
   fi
-  cat "${LOG_DIR}"/*.asan |grep "#" | grep -w "TDinternal"
+  cat "${LOG_DIR}"/*.asan |grep "#" | grep -wE "TDinternal|taos-community"
   exit 1
 fi

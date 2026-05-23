@@ -48,7 +48,7 @@ if(${BUILD_GEOS})
 endif()
 
 
-if(${JEMALLOC_ENABLED})
+if(${BUILD_JEMALLOC})
     find_package(jemalloc QUIET)
     if(NOT jemalloc_FOUND)
         message(STATUS "jemalloc not found in Conan packages, will use ExternalProject")
@@ -430,16 +430,6 @@ macro(DEP_ext_avro_LIB tgt)
     if(TARGET avro-c::avro-c)
         target_link_libraries(${tgt} PRIVATE avro-c::avro-c)
     endif()
-endmacro()
-
-macro(DEP_ext_libs3 tgt)
-    # libs3 not migrated yet
-endmacro()
-
-macro(DEP_ext_libs3_INC tgt)
-endmacro()
-
-macro(DEP_ext_libs3_LIB tgt)
 endmacro()
 
 macro(DEP_ext_azure tgt)

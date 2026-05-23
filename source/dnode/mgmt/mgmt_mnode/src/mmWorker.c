@@ -15,6 +15,8 @@
 
 #define _DEFAULT_SOURCE
 #include "mmInt.h"
+#include "query.h"
+#include "executor.h"
 #include "streamMsg.h"
 #include "stream.h"
 #include "streamReader.h"
@@ -227,7 +229,16 @@ int32_t mmPutMsgToQueue(SMnodeMgmt *pMgmt, EQueueType qtype, SRpcMsg *pRpc) {
       pWorker = &pMgmt->writeWorker;
       break;
     case QUERY_QUEUE:
-      pWorker = &pMgmt->queryWorker;
+      if (pRpc->msgType == TDMT_SCH_QUERY_CONTINUE) {
+        SQueryContinueReq *pReq = (SQueryContinueReq *)pRpc->pCont;
+        if (pReq != NULL && pReq->taskType == TASK_TYPE_HQUERY) {
+          pWorker = &pMgmt->mqueryWorker;
+        } else {
+          pWorker = &pMgmt->queryWorker;
+        }
+      } else {
+        pWorker = &pMgmt->queryWorker;
+      }
       break;
     case FETCH_QUEUE:
       pWorker = &pMgmt->fetchWorker;
@@ -342,6 +353,10 @@ static int32_t mmProcessStreamFetchMsg(SMnodeMgmt *pMgmt, SRpcMsg* pMsg) {
   STREAM_CHECK_NULL_GOTO(pResList, terrno);
   uint64_t ts = 0;
   bool     hasNext = false;
+  // Init thread_local scalar ctx; mnode workers may not have set it for
+  // this task, breaking scalar-subquery re-fetch on later events.
+  qSetStreamGen(sStreamReaderCalcInfo->pTaskInfo, sStreamReaderCalcInfo->rtInfo.funcInfo.streamGen);
+  setTaskScalarExtraInfo(sStreamReaderCalcInfo->pTaskInfo);
   STREAM_CHECK_RET_GOTO(qExecTaskOpt(sStreamReaderCalcInfo->pTaskInfo, pResList, &ts, &hasNext, NULL, true));
 
   for(size_t i = 0; i < taosArrayGetSize(pResList); i++){
